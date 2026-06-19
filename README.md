@@ -24,13 +24,15 @@ One highlight: average delivery time falls monotonically as review score rises
 reviews.
 
 The dashboard is **reproducible from code**: `python scripts/setup_metabase.py`
-provisions the Metabase data source, all six cards, and the layout via the REST
-API (idempotent, standard library only). See the script header for config.
+provisions the Metabase data source, all seven cards, and the layout via the
+REST API (idempotent, standard library only). See the script header for config.
 
 ## What this project demonstrates
 
-- **Orchestration** with Airflow: a scheduled, retrying DAG with idempotent,
-  **per-day incremental loads** and historical **backfills**.
+- **Orchestration** with Airflow: one scheduled, retrying DAG runs both a
+  **batch** load (Olist CSVs) and a **live API** source (daily USD/BRL rates
+  from the Frankfurter/ECB API) — idempotent **per-day incremental loads** with
+  historical **backfills**.
 - **ELT modeling** with dbt: a layered `staging → intermediate → marts`
   project with a star schema, surrogate keys, an **incremental** fact model,
   and a **snapshot** (slowly-changing dimension).
@@ -65,7 +67,8 @@ API (idempotent, standard library only). See the script header for config.
 ├── dags/
 │   └── olist_elt_dag.py        # extract -> load -> dbt (Cosmos task group)
 ├── include/
-│   ├── extract/load_olist.py   # idempotent, per-day extract/load
+│   ├── extract/load_olist.py   # idempotent, per-day Olist extract/load
+│   ├── fx/load_fx.py           # live USD/BRL rate API source
 │   └── dbt/                     # the dbt project
 │       ├── models/{staging,intermediate,marts}/
 │       ├── snapshots/  tests/  macros/
@@ -126,6 +129,11 @@ order items are loaded **one logical day at a time** and deleted-then-inserted
 per day, so re-running a date is safe (idempotent) and backfills compose
 cleanly.
 
+**Live FX feed** (`include/fx/load_fx.py`) pulls that day's USD/BRL rate from
+the Frankfurter API (ECB data) in the same DAG run — a genuine live API source
+alongside the batch CSV load. dbt forward-fills the business-day rates to every
+calendar day (`dim_fx_rates`) and converts order GMV to USD in `fct_orders`.
+
 **Transform** (`include/dbt/`) is layered:
 - `staging/` — one model per source; cast + rename only (1:1 with raw).
 - `intermediate/` — ephemeral joins and business logic (delivery timing, item
@@ -140,7 +148,7 @@ cleanly.
               └──────────┐      ┌────┴───────┐      │
                          ▼      ▼            ▼      ▼
    dim_dates ───────►  fct_orders        fct_order_items  ◄─── (incremental)
-                         ▲                                 fct_payments
+   dim_fx_rates ────►    ▲                                fct_payments
                   dim_geography
 ```
 
@@ -148,15 +156,17 @@ cleanly.
 - `fct_order_items` — grain: one line item; **incremental** on `order_date`.
 - `dim_customers` — keyed on `customer_unique_id` (the real person), which is
   what enables repeat-purchase analysis — a detail most tutorials miss.
+- `dim_fx_rates` — USD/BRL rate per calendar day from the live API
+  (forward-filled); `fct_orders` uses it to express GMV in USD.
 
 ### Questions the marts answer
 Delivery time vs. estimate by state · review-score drivers (delay
-correlation) · GMV by category and region over time · seller on-time rate ·
-repeat-customer rate.
+correlation) · GMV (BRL and USD) by category and region over time · seller
+on-time rate · repeat-customer rate.
 
 ## Data quality
 Tests run as a pipeline gate — Cosmos `TestBehavior.AFTER_EACH` makes a failing
-test stop the affected branch of the DAG. The suite (56 tests) combines:
+test stop the affected branch of the DAG. The suite (63 tests) combines:
 
 - **dbt core**: `not_null`, `unique`, `relationships`, `accepted_values` on keys
   and categorical columns.
@@ -183,5 +193,5 @@ test stop the affected branch of the DAG. The suite (56 tests) combines:
 ## Roadmap
 - [x] Seed a Metabase dashboard and commit a screenshot to `docs/`.
 - [x] Publish dbt docs (lineage + catalog) to GitHub Pages.
-- [ ] Add Great Expectations or `dbt-expectations` for richer checks.
-- [ ] Enrich with a live FX (BRL/USD) feed to show batch + incremental in one DAG.
+- [x] Add `dbt-expectations` checks (ranges, sets, regex, distribution).
+- [x] Enrich with a live FX (USD/BRL) feed — batch + live API in one DAG.

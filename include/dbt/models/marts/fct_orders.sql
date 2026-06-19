@@ -37,6 +37,12 @@ reviews as (
 
 ),
 
+fx as (
+
+    select date_day, brl_per_usd from {{ ref('dim_fx_rates') }}
+
+),
+
 final as (
 
     select
@@ -53,11 +59,15 @@ final as (
         items.items_price,
         items.freight_value,
         payments.total_payment_value,
+        fx.brl_per_usd,
+        round((payments.total_payment_value / nullif(fx.brl_per_usd, 0))::numeric, 2)
+            as total_payment_value_usd,
         reviews.review_score
     from orders
     left join items    on orders.order_id = items.order_id
     left join payments on orders.order_id = payments.order_id
     left join reviews  on orders.order_id = reviews.order_id
+    left join fx       on cast(orders.purchased_at as date) = fx.date_day
 
 )
 

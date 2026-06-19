@@ -100,6 +100,14 @@ CARDS = [
         "viz": {"graph.dimensions": ["product_category"], "graph.metrics": ["revenue"]},
         "pos": {"col": 0, "row": 10, "size_x": 12, "size_y": 7},
     },
+    {
+        "tag": "fxrate", "name": "USD/BRL exchange rate (monthly avg)", "display": "line",
+        "sql": "select date_trunc('month', date_day)::date as month, "
+               "round(avg(brl_per_usd)::numeric, 4) as brl_per_usd "
+               "from marts.dim_fx_rates group by 1 order by 1",
+        "viz": {"graph.dimensions": ["month"], "graph.metrics": ["brl_per_usd"]},
+        "pos": {"col": 0, "row": 17, "size_x": 24, "size_y": 6},
+    },
 ]
 
 

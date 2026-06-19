@@ -40,6 +40,14 @@ models:
       - name: date_day
         tests: [not_null, unique]
 
+  - name: dim_fx_rates
+    description: USD/BRL rate for every calendar day (business-day rates carried forward).
+    columns:
+      - name: date_day
+        tests: [not_null, unique]
+      - name: brl_per_usd
+        tests: [not_null]
+
   - name: fct_orders
     description: One row per order with delivery, payment, and review measures.
     data_tests:

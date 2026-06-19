@@ -30,6 +30,7 @@ from cosmos.constants import TestBehavior
 
 sys.path.append("/opt/airflow/include")
 from extract.load_olist import load_orders_for_interval, load_reference_data  # noqa: E402
+from fx.load_fx import load_fx_for_interval  # noqa: E402
 
 DBT_PROJECT_DIR = Path("/opt/airflow/include/dbt")
 DBT_EXECUTABLE = "/opt/dbt-venv/bin/dbt"
@@ -66,6 +67,12 @@ with DAG(
         python_callable=load_orders_for_interval,
     )
 
+    # Live API source: same DAG run also pulls that day's USD/BRL rate.
+    load_fx = PythonOperator(
+        task_id="load_fx_for_interval",
+        python_callable=load_fx_for_interval,
+    )
+
     transform = DbtTaskGroup(
         group_id="dbt_transform",
         project_config=ProjectConfig(DBT_PROJECT_DIR),
@@ -79,3 +86,4 @@ with DAG(
     )
 
     load_reference >> load_orders >> transform
+    load_fx >> transform
