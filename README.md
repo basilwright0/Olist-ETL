@@ -21,6 +21,10 @@ One highlight: average delivery time falls monotonically as review score rises
 (1★ ≈ 21 days, 5★ ≈ 11 days) — delivery delay is the clearest driver of poor
 reviews.
 
+The dashboard is **reproducible from code**: `python scripts/setup_metabase.py`
+provisions the Metabase data source, all six cards, and the layout via the REST
+API (idempotent, standard library only). See the script header for config.
+
 ## What this project demonstrates
 
 - **Orchestration** with Airflow: a scheduled, retrying DAG with idempotent,
@@ -64,7 +68,8 @@ reviews.
 │       ├── dbt_project.yml  profiles.yml  packages.yml
 │       └── .sqlfluff
 ├── data/raw/                   # drop the Kaggle CSVs here (gitignored)
-├── docs/architecture.svg
+├── scripts/setup_metabase.py   # provision the Metabase dashboard via API
+├── docs/                       # architecture diagram + dashboard screenshot
 └── .github/workflows/ci.yml
 ```
 
