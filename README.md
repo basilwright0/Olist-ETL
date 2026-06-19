@@ -8,6 +8,8 @@ analytics — all running locally with a single `docker compose up`.
 The dataset is the [Olist Brazilian E-Commerce](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 public dataset (~100k orders across 9 related tables).
 
+**Live dbt docs (model lineage + data catalog):** <https://basilwright0.github.io/Olist-ETL/>
+
 ![Architecture](docs/architecture.svg)
 
 ## Dashboard
@@ -164,9 +166,12 @@ branch of the DAG.
   `airflow-init` container a moment — it fetches dbt packages (`dbt deps`)
   into the mounted project so Cosmos can parse the graph.
 - The warehouse is exposed on host port **5434** (5432 is used internally).
+- Regenerate the published docs with `dbt docs generate --static` and copy
+  `include/dbt/target/static_index.html` to `docs/index.html` (GitHub Pages
+  serves `/docs`).
 
 ## Roadmap
 - [x] Seed a Metabase dashboard and commit a screenshot to `docs/`.
-- [ ] Add `dbt docs generate` + publish the catalog.
+- [x] Publish dbt docs (lineage + catalog) to GitHub Pages.
 - [ ] Add Great Expectations or `dbt-expectations` for richer checks.
 - [ ] Enrich with a live FX (BRL/USD) feed to show batch + incremental in one DAG.
