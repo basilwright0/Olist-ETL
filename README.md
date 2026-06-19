@@ -10,6 +10,17 @@ public dataset (~100k orders across 9 related tables).
 
 ![Architecture](docs/architecture.svg)
 
+## Dashboard
+
+A Metabase dashboard built on the `marts` schema, over the full 2016–2018 Olist
+history (99,441 orders, R$16M GMV):
+
+![Olist analytics dashboard](docs/dashboard.png)
+
+One highlight: average delivery time falls monotonically as review score rises
+(1★ ≈ 21 days, 5★ ≈ 11 days) — delivery delay is the clearest driver of poor
+reviews.
+
 ## What this project demonstrates
 
 - **Orchestration** with Airflow: a scheduled, retrying DAG with idempotent,
@@ -150,7 +161,7 @@ branch of the DAG.
 - The warehouse is exposed on host port **5434** (5432 is used internally).
 
 ## Roadmap
-- [ ] Seed a Metabase dashboard and commit screenshots to `docs/`.
+- [x] Seed a Metabase dashboard and commit a screenshot to `docs/`.
 - [ ] Add `dbt docs generate` + publish the catalog.
 - [ ] Add Great Expectations or `dbt-expectations` for richer checks.
 - [ ] Enrich with a live FX (BRL/USD) feed to show batch + incremental in one DAG.
