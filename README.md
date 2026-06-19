@@ -34,10 +34,12 @@ API (idempotent, standard library only). See the script header for config.
 - **ELT modeling** with dbt: a layered `staging → intermediate → marts`
   project with a star schema, surrogate keys, an **incremental** fact model,
   and a **snapshot** (slowly-changing dimension).
-- **Data quality** as a pipeline gate: generic dbt tests
-  (`not_null`, `unique`, `accepted_values`, `relationships`) plus a custom
-  singular test, all run inside the DAG via [Cosmos](https://www.astronomer.io/cosmos/)
-  so each model/test is its own Airflow task.
+- **Data quality** as a pipeline gate: dbt core tests (`not_null`, `unique`,
+  `accepted_values`, `relationships`), **dbt-expectations** checks (value
+  ranges, set membership, regex, distribution, row count), and a
+  graded-severity singular test — all run inside the DAG via
+  [Cosmos](https://www.astronomer.io/cosmos/) so each model/test is its own
+  Airflow task.
 - **Reproducibility**: fully containerized; clone, drop in the data, and run.
 - **CI**: GitHub Actions runs `dbt deps`, `sqlfluff` lint, and `dbt compile`
   on every pull request.
@@ -153,11 +155,19 @@ correlation) · GMV by category and region over time · seller on-time rate ·
 repeat-customer rate.
 
 ## Data quality
-Every key column has `not_null` / `unique` tests; foreign keys use
-`relationships`; `order_status` and `review_score` use `accepted_values`.
-A singular test asserts every `delivered` order has a delivery timestamp.
-With Cosmos `TestBehavior.AFTER_EACH`, a failing test stops the affected
-branch of the DAG.
+Tests run as a pipeline gate — Cosmos `TestBehavior.AFTER_EACH` makes a failing
+test stop the affected branch of the DAG. The suite (56 tests) combines:
+
+- **dbt core**: `not_null`, `unique`, `relationships`, `accepted_values` on keys
+  and categorical columns.
+- **[dbt-expectations](https://github.com/metaplane/dbt-expectations)**: value
+  ranges (price / freight / payment ≥ 0, delivery 0–365 days), set membership
+  (`payment_type`, `order_status`), a regex on the 32-char hex `order_id`, a
+  column uniqueness-proportion check, a table row-count check, and a
+  distribution check (mean `review_score` stays ≈ 4).
+- **Graded-severity singular test**: delivered orders should have a delivery
+  date — it *warns* on the ~8 known Olist source anomalies and only *fails* the
+  build if they exceed 20 (`error_if: '>20'`), treating a spike as a regression.
 
 ## Notes & troubleshooting
 - **dbt runs in an isolated virtualenv** (`/opt/dbt-venv`) so its dependencies

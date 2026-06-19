@@ -3,6 +3,10 @@ version: '1.0.0'
 config-version: 2
 profile: 'olist'
 
+vars:
+  # Required by dbt_date (a dbt-expectations dependency).
+  'dbt_date:time_zone': 'America/Sao_Paulo'
+
 model-paths: ["models"]
 seed-paths: ["seeds"]
 test-paths: ["tests"]

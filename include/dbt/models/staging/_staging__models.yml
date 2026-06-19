@@ -6,7 +6,11 @@ models:
     columns:
       - name: order_id
         description: Primary key of an order.
-        tests: [not_null, unique]
+        data_tests:
+          - not_null
+          - unique
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: "^[0-9a-f]{32}$"
       - name: customer_id
         description: Per-order customer key (joins to stg_olist__customers).
         tests: [not_null]

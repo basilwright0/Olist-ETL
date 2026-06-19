@@ -8,7 +8,13 @@ models:
         description: Surrogate key.
         tests: [not_null, unique]
       - name: customer_unique_id
-        tests: [not_null, unique]
+        # Every row should be a distinct customer.
+        data_tests:
+          - not_null
+          - unique
+          - dbt_expectations.expect_column_proportion_of_unique_values_to_be_between:
+              min_value: 1
+              max_value: 1
 
   - name: dim_products
     columns:
@@ -36,6 +42,9 @@ models:
 
   - name: fct_orders
     description: One row per order with delivery, payment, and review measures.
+    data_tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1
     columns:
       - name: order_id
         tests: [not_null, unique]
@@ -45,10 +54,30 @@ models:
           - relationships:
               to: ref('dim_customers')
               field: customer_key
+      - name: order_status
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_set:
+              value_set: ['delivered', 'shipped', 'canceled', 'unavailable',
+                          'invoiced', 'processing', 'created', 'approved']
       - name: review_score
-        tests:
+        data_tests:
           - accepted_values:
               values: [1, 2, 3, 4, 5]
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 5
+              row_condition: "review_score is not null"
+          # Olist's average review hovers around 4 — alert if the distribution shifts.
+          - dbt_expectations.expect_column_mean_to_be_between:
+              min_value: 3.5
+              max_value: 4.5
+              row_condition: "review_score is not null"
+      - name: delivery_days
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 365
+              row_condition: "delivery_days is not null"
 
   - name: fct_order_items
     description: One row per order line item (incremental).
@@ -57,8 +86,28 @@ models:
         tests: [not_null, unique]
       - name: product_id
         tests: [not_null]
+      - name: price
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100000
+      - name: freight_value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 10000
 
   - name: fct_payments
+    description: One row per payment record within an order.
     columns:
       - name: payment_id
         tests: [not_null, unique]
+      - name: payment_type
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_set:
+              value_set: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+      - name: payment_value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100000
