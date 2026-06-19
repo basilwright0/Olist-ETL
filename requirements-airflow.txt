@@ -1,0 +1,6 @@
+# Installed into the Airflow environment (must satisfy Airflow 2.10.5 constraints).
+# dbt itself is NOT here — it lives in an isolated venv (see Dockerfile).
+pandas>=2.1,<2.3
+psycopg2-binary>=2.9
+SQLAlchemy>=1.4,<2.0
+astronomer-cosmos==1.8.2

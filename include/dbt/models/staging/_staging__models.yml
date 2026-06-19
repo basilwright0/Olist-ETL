@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: stg_olist__orders
+    description: One row per order, with timestamps typed.
+    columns:
+      - name: order_id
+        description: Primary key of an order.
+        tests: [not_null, unique]
+      - name: customer_id
+        description: Per-order customer key (joins to stg_olist__customers).
+        tests: [not_null]
+      - name: order_status
+        tests:
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'unavailable',
+                       'invoiced', 'processing', 'created', 'approved']
+
+  - name: stg_olist__order_items
+    description: One row per item line within an order.
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: price
+        tests: [not_null]
+
+  - name: stg_olist__customers
+    description: One row per per-order customer record.
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+      - name: customer_unique_id
+        description: The real person behind potentially many customer_id values.
+        tests: [not_null]
+
+  - name: stg_olist__products
+    columns:
+      - name: product_id
+        tests: [not_null, unique]
+
+  - name: stg_olist__sellers
+    columns:
+      - name: seller_id
+        tests: [not_null, unique]
+
+  - name: stg_olist__order_payments
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: payment_value
+        tests: [not_null]
+
+  - name: stg_olist__order_reviews
+    columns:
+      - name: review_id
+        tests: [not_null]
+      - name: review_score
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+  - name: stg_olist__category_translation
+    columns:
+      - name: product_category_name
+        tests: [not_null, unique]

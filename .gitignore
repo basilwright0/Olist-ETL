@@ -1,0 +1,29 @@
+# Raw data — download from Kaggle, don't commit (large + licensed)
+data/raw/*
+!data/raw/.gitkeep
+
+# Airflow runtime
+logs/
+plugins/*
+!plugins/.gitkeep
+
+# dbt artifacts
+include/dbt/target/
+include/dbt/dbt_packages/
+include/dbt/logs/
+include/dbt/.user.yml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets / local config
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

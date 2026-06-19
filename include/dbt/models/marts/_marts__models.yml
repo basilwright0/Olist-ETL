@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: One row per real customer (customer_unique_id).
+    columns:
+      - name: customer_key
+        description: Surrogate key.
+        tests: [not_null, unique]
+      - name: customer_unique_id
+        tests: [not_null, unique]
+
+  - name: dim_products
+    columns:
+      - name: product_key
+        tests: [not_null, unique]
+      - name: product_id
+        tests: [not_null, unique]
+
+  - name: dim_sellers
+    columns:
+      - name: seller_key
+        tests: [not_null, unique]
+      - name: seller_id
+        tests: [not_null, unique]
+
+  - name: dim_geography
+    columns:
+      - name: zip_code_prefix
+        tests: [not_null, unique]
+
+  - name: dim_dates
+    columns:
+      - name: date_day
+        tests: [not_null, unique]
+
+  - name: fct_orders
+    description: One row per order with delivery, payment, and review measures.
+    columns:
+      - name: order_id
+        tests: [not_null, unique]
+      - name: customer_key
+        description: Foreign key to dim_customers.
+        tests:
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+      - name: review_score
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+  - name: fct_order_items
+    description: One row per order line item (incremental).
+    columns:
+      - name: order_item_id
+        tests: [not_null, unique]
+      - name: product_id
+        tests: [not_null]
+
+  - name: fct_payments
+    columns:
+      - name: payment_id
+        tests: [not_null, unique]

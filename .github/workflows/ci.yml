@@ -1,0 +1,57 @@
+name: dbt CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: warehouse
+          POSTGRES_PASSWORD: warehouse
+          POSTGRES_DB: warehouse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U warehouse"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      WAREHOUSE_HOST: localhost
+      WAREHOUSE_PORT: "5432"
+      WAREHOUSE_USER: warehouse
+      WAREHOUSE_PASSWORD: warehouse
+      WAREHOUSE_DB: warehouse
+      WAREHOUSE_SCHEMA: analytics
+      DBT_PROFILES_DIR: include/dbt
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt + sqlfluff
+        run: pip install "dbt-core>=1.8,<1.9" "dbt-postgres>=1.8,<1.9" sqlfluff==3.2.5 sqlfluff-templater-dbt==3.2.5
+
+      - name: dbt deps
+        working-directory: include/dbt
+        run: dbt deps
+
+      - name: Lint models (sqlfluff)
+        working-directory: include/dbt
+        continue-on-error: true
+        run: sqlfluff lint models
+
+      - name: dbt compile
+        working-directory: include/dbt
+        run: dbt compile

@@ -1,0 +1,15 @@
+# Single profile used by both Cosmos (in Airflow) and CI. All connection
+# details come from environment variables so no secrets live in the repo.
+olist:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('WAREHOUSE_HOST', 'warehouse') }}"
+      port: "{{ env_var('WAREHOUSE_PORT', '5432') | int }}"
+      user: "{{ env_var('WAREHOUSE_USER', 'warehouse') }}"
+      password: "{{ env_var('WAREHOUSE_PASSWORD', 'warehouse') }}"
+      dbname: "{{ env_var('WAREHOUSE_DB', 'warehouse') }}"
+      schema: "{{ env_var('WAREHOUSE_SCHEMA', 'analytics') }}"
+      threads: 4
+      sslmode: disable
